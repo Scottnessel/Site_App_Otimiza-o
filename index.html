@@ -96,6 +96,26 @@
   .project-canvas h4{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:600;color:var(--ink-dim);line-height:1.5;}
   .project-canvas p.hint{font-size:0.92rem;color:var(--ink-dim);opacity:0.75;line-height:1.6;max-width:48ch;}
 
+  /* PLANOS */
+  .plans{padding:100px 0;}
+  .plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;align-items:stretch;}
+  @media (max-width:900px){.plan-grid{grid-template-columns:1fr;}}
+  .plan{position:relative;display:flex;flex-direction:column;padding:36px 32px;border:1px solid var(--line);border-radius:20px;background:var(--card);}
+  .plan.featured{border-color:transparent;background:linear-gradient(var(--bg),var(--bg)) padding-box,linear-gradient(135deg,var(--blue),var(--purple)) border-box;border:1.5px solid transparent;}
+  .plan-badge{position:absolute;top:-12px;left:32px;font-size:0.75rem;font-weight:600;color:#fff;padding:5px 12px;border-radius:999px;background:linear-gradient(135deg,var(--blue),var(--purple));}
+  .plan h3{font-size:1.15rem;font-weight:600;letter-spacing:-0.01em;}
+  .plan .plan-desc{margin-top:8px;font-size:0.92rem;color:var(--ink-dim);line-height:1.5;min-height:2.9em;}
+  .price{margin:22px 0 26px;display:flex;align-items:baseline;gap:6px;}
+  .price strong{font-family:'Space Grotesk',sans-serif;font-size:2.6rem;font-weight:600;letter-spacing:-0.02em;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .price span{font-size:0.9rem;color:var(--ink-dim);}
+  .plan ul{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:32px;flex:1;}
+  .plan li{display:flex;gap:10px;font-size:0.94rem;line-height:1.45;color:var(--ink);}
+  .plan li::before{content:"";flex-shrink:0;width:16px;height:16px;margin-top:2px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l3 3 5-6' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l3 3 5-6' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;}
+  .plan li.inherit{color:var(--ink-dim);}
+  .plan-btn{display:block;text-align:center;padding:13px 20px;border-radius:999px;font-weight:600;font-size:0.95rem;text-decoration:none;border:1px solid var(--line);color:var(--ink);transition:transform .2s ease,border-color .2s ease;}
+  .plan-btn:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--blue) 50%,var(--line));}
+  .plan.featured .plan-btn{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;border-color:transparent;}
+
   /* CTA */
   .cta-strip{padding:100px 0 110px;text-align:center;}
   .cta-strip h2{font-size:clamp(1.9rem,3.4vw,2.6rem);font-weight:600;letter-spacing:-0.015em;max-width:20ch;margin:0 auto;line-height:1.2;}
@@ -120,6 +140,7 @@
     </div>
     <div class="nav-links">
       <a href="#app">Aplicativo</a>
+      <a href="#planos">Planos</a>
       <a href="#projeto">O projeto</a>
       <a href="contato.html">Contato</a>
     </div>
@@ -245,6 +266,57 @@
     </div>
   </section>
 
+  <!-- PLANOS -->
+  <section class="plans" id="planos">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Escolha o plano ideal para o seu aparelho</h2>
+        <p>Comece com o essencial e evolua conforme a sua necessidade. Cada plano inclui tudo o que o anterior oferece.</p>
+      </div>
+
+      <div class="plan-grid">
+        <div class="plan">
+          <h3>Leve</h3>
+          <p class="plan-desc">Otimização leve para o dia a dia do seu aparelho.</p>
+          <div class="price"><strong>R$ 10</strong><span>/mês</span></div>
+          <ul>
+            <li>Análise rápida do dispositivo</li>
+            <li>Limpeza de arquivos temporários e cache</li>
+            <li>Liberação básica de memória</li>
+          </ul>
+          <a href="baixar.html" class="plan-btn">Começar com o Leve</a>
+        </div>
+
+        <div class="plan featured">
+          <span class="plan-badge">Mais popular</span>
+          <h3>Avançado</h3>
+          <p class="plan-desc">Mais desempenho em jogos e aplicativos.</p>
+          <div class="price"><strong>R$ 50</strong><span>/mês</span></div>
+          <ul>
+            <li class="inherit">Tudo do plano Leve</li>
+            <li>Otimização para jogos e aplicativos</li>
+            <li>Seleção de tipos de limpeza</li>
+            <li>Controle de apps que consomem memória</li>
+          </ul>
+          <a href="baixar.html" class="plan-btn">Escolher o Avançado</a>
+        </div>
+
+        <div class="plan">
+          <h3>Completo</h3>
+          <p class="plan-desc">Otimização profunda com sugestões inteligentes.</p>
+          <div class="price"><strong>R$ 100</strong><span>/mês</span></div>
+          <ul>
+            <li class="inherit">Tudo do plano Avançado</li>
+            <li>Otimização profunda do sistema</li>
+            <li>Histórico que aprende e sugere melhorias</li>
+            <li>Suporte prioritário</li>
+          </ul>
+          <a href="baixar.html" class="plan-btn">Escolher o Completo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- PROJECT -->
   <section class="project" id="projeto">
     <div class="wrap project-inner">
@@ -290,6 +362,7 @@
     <span>© 2026 Rocket Booster. Todos os direitos reservados.</span>
     <nav>
       <a href="#app">Aplicativo</a>
+      <a href="#planos">Planos</a>
       <a href="#projeto">Projeto</a>
       <a href="contato.html">Contato</a>
     </nav>
