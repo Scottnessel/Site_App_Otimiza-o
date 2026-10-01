@@ -66,9 +66,10 @@
   .art-frame .halo{position:absolute;inset:8%;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--blue) 16%,transparent),transparent 65%);z-index:-1;}
   .path-line{fill:none;stroke-width:1.6;stroke-linecap:round;}
   .path-dim{stroke:var(--line);}
-  .trail{stroke:url(#lineGrad);stroke-width:2.4;}
   .node{fill:var(--bg-soft);stroke:var(--line);stroke-width:1.4;}
   .node.hot{stroke:var(--blue);}
+  .node.seen{stroke:color-mix(in srgb,var(--blue) 45%,var(--line));}
+  #trail{fill:none;stroke:url(#lineGrad);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:0;}
 
   .divider{height:1px;background:linear-gradient(90deg,transparent,var(--line) 20%,var(--line) 80%,transparent);}
 
@@ -194,35 +195,24 @@
               <stop offset="0" stop-color="#1E90FF"/>
               <stop offset="1" stop-color="#8A2BE2" stop-opacity="0"/>
             </linearGradient>
-            <path id="route" d="M60 340 C130 320,160 260,210 210 C250 200,280 170,330 190 C350 160,365 120,360 90"/>
           </defs>
 
-          <path class="path-line path-dim" d="M60 80 C 150 60, 220 140, 210 210"/>
-          <path class="path-line path-dim" d="M60 340 C 130 320, 160 260, 210 210"/>
-          <path class="path-line path-dim" d="M360 90 C 300 110, 260 160, 210 210"/>
-          <path class="path-line path-dim" d="M370 320 C 300 300, 260 260, 210 210"/>
-          <path class="path-line path-dim" d="M210 210 C 250 200, 280 170, 330 190"/>
+          <path id="sp0" class="path-line path-dim" d="M60 80 C 150 60, 220 140, 210 210"/>
+          <path id="sp1" class="path-line path-dim" d="M60 340 C 130 320, 160 260, 210 210"/>
+          <path id="sp2" class="path-line path-dim" d="M360 90 C 300 110, 260 160, 210 210"/>
+          <path id="sp3" class="path-line path-dim" d="M370 320 C 300 300, 260 260, 210 210"/>
+          <path id="sp4" class="path-line path-dim" d="M330 190 C 280 170, 250 200, 210 210"/>
 
-          <circle class="node" cx="60" cy="80" r="9"/>
-          <circle class="node" cx="60" cy="340" r="9"/>
-          <circle class="node" cx="360" cy="90" r="9"/>
-          <circle class="node" cx="370" cy="320" r="9"/>
-          <circle class="node" cx="330" cy="190" r="7"/>
-          <circle class="node hot" cx="210" cy="210" r="13"/>
+          <circle id="n0" class="node" cx="60" cy="80" r="9"/>
+          <circle id="n1" class="node" cx="60" cy="340" r="9"/>
+          <circle id="n2" class="node" cx="360" cy="90" r="9"/>
+          <circle id="n3" class="node" cx="370" cy="320" r="9"/>
+          <circle id="n4" class="node" cx="330" cy="190" r="7"/>
+          <circle id="n5" class="node hot" cx="210" cy="210" r="13"/>
 
-          <!-- rastro -->
-          <path class="path-line trail" d="M60 340 C130 320,160 260,210 210 C250 200,280 170,330 190 C350 160,365 120,360 90"
-                pathLength="1" stroke-dasharray="0.3 2" stroke-dashoffset="0.3" opacity="0">
-            <animate attributeName="stroke-dashoffset" values="0.3;-0.7" keyTimes="0;1" calcMode="spline" keySplines=".45 0 .55 1" dur="9s" repeatCount="indefinite"/>
-            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.06;.9;1" dur="9s" repeatCount="indefinite"/>
-          </path>
+          <path id="trail" d=""/>
 
-          <!-- foguete -->
-          <g opacity="0">
-            <animateMotion dur="9s" repeatCount="indefinite" rotate="auto" calcMode="spline" keyTimes="0;1" keySplines=".45 0 .55 1">
-              <mpath href="#route"/>
-            </animateMotion>
-            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.06;.9;1" dur="6s" repeatCount="indefinite"/>
+          <g id="rocket">
             <path fill="url(#flameGrad)" d="M-9 -3 Q-24 0 -9 3 Z">
               <animate attributeName="d" dur=".25s" repeatCount="indefinite" values="M-9 -3 Q-24 0 -9 3 Z;M-9 -3.5 Q-30 0 -9 3.5 Z;M-9 -3 Q-22 0 -9 3 Z;M-9 -3 Q-24 0 -9 3 Z"/>
             </path>
@@ -370,10 +360,98 @@
 </footer>
 
 <script>
-  // respeita "reduzir movimento"
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    document.getElementById('rocketArt').pauseAnimations();
+(function(){
+  const INTERVAL_MS = 9000;  // intervalo entre uma viagem e outra
+  const TRAVEL_MS   = 3000;  // duração da viagem em si
+  const HUB = 5;
+  const svg = document.getElementById('rocketArt');
+  const rocket = document.getElementById('rocket');
+  const trail = document.getElementById('trail');
+  const nodes = [...Array(6)].map((_, i) => document.getElementById('n' + i));
+  const spokes = [...Array(5)].map((_, i) => document.getElementById('sp' + i));
+  const hubPt = {x:210, y:210};
+
+  let cur = HUB, visited = new Set([HUB]);
+  let move = null, trailPts = [], arrivedAt = 0, angle = -45;
+  let nextAt = performance.now() + 1500;
+
+  const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2;
+
+  function setRocket(x, y){
+    rocket.setAttribute('transform', `translate(${x} ${y}) rotate(${angle})`);
   }
+  setRocket(hubPt.x, hubPt.y);
+
+  function buildRoute(from, to){
+    const parts = [];
+    if (from !== HUB) parts.push({el: spokes[from], rev: false});
+    if (to !== HUB)   parts.push({el: spokes[to],   rev: true});
+    let total = 0;
+    parts.forEach(p => { p.len = p.el.getTotalLength(); total += p.len; });
+    return {parts, total};
+  }
+  function pointAt(r, l){
+    l = Math.max(0, Math.min(r.total, l));
+    let acc = 0;
+    for (let i = 0; i < r.parts.length; i++){
+      const p = r.parts[i];
+      if (l <= acc + p.len || i === r.parts.length - 1){
+        const s = Math.min(p.len, l - acc);
+        return p.el.getPointAtLength(p.rev ? p.len - s : s);
+      }
+      acc += p.len;
+    }
+  }
+  function pickTarget(){
+    let free = [0,1,2,3,4,5].filter(i => !visited.has(i));
+    if (!free.length){            // todos visitados: recomeça o ciclo
+      visited = new Set([cur]);
+      nodes.forEach(n => n.classList.remove('seen'));
+      free = [0,1,2,3,4,5].filter(i => i !== cur);
+    }
+    return free[Math.floor(Math.random() * free.length)];
+  }
+
+  function frame(now){
+    if (!move && now >= nextAt){
+      const to = pickTarget();
+      visited.add(to);
+      move = {to, route: buildRoute(cur, to), start: now};
+      trailPts = [];
+      nextAt = now + INTERVAL_MS;
+    }
+    if (move){
+      const t = Math.min(1, (now - move.start) / TRAVEL_MS);
+      const l = ease(t) * move.route.total;
+      const p = pointAt(move.route, l);
+      const a = l + 2 <= move.route.total ? pointAt(move.route, l + 2) : null;
+      const b = a || pointAt(move.route, l - 2);
+      const target = Math.atan2(a ? a.y - p.y : p.y - b.y, a ? a.x - p.x : p.x - b.x) * 180 / Math.PI;
+      angle += (((target - angle + 540) % 360) - 180) * 0.15;
+      setRocket(p.x, p.y);
+      trailPts.push(p.x.toFixed(1) + ' ' + p.y.toFixed(1));
+      trail.setAttribute('d', 'M' + trailPts.join(' L'));
+      trail.style.opacity = 1;
+      if (t === 1){
+        nodes[cur].classList.remove('hot');
+        nodes[cur].classList.add('seen');
+        cur = move.to;
+        nodes[cur].classList.add('hot');
+        arrivedAt = now;
+        move = null;
+      }
+    } else if (arrivedAt){
+      trail.style.opacity = Math.max(0, 1 - (now - arrivedAt) / 1200);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    svg.pauseAnimations();   // foguete fica parado no centro
+  } else {
+    requestAnimationFrame(frame);
+  }
+})();
 </script>
 </body>
 </html>
