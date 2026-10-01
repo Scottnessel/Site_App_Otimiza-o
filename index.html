@@ -361,53 +361,52 @@
 
 <script>
 (function(){
-  const INTERVAL_MS = 9000;  // intervalo entre uma viagem e outra
-  const TRAVEL_MS   = 3000;  // duração da viagem em si
-  const HUB = 5;
+  const INTERVAL_MS = 3500;  // tempo entre o início de uma viagem e a próxima
+  const TRAVEL_MS   = 2000;  // duração de cada viagem
+  const PTS = [
+    {x:60,y:80},{x:60,y:340},{x:360,y:90},{x:370,y:320},{x:330,y:190},{x:210,y:210}
+  ];
+  const CENTER = {x:210,y:210};
   const svg = document.getElementById('rocketArt');
   const rocket = document.getElementById('rocket');
   const trail = document.getElementById('trail');
-  const nodes = [...Array(6)].map((_, i) => document.getElementById('n' + i));
-  const spokes = [...Array(5)].map((_, i) => document.getElementById('sp' + i));
-  const hubPt = {x:210, y:210};
+  const nodes = PTS.map((_, i) => document.getElementById('n' + i));
 
-  let cur = HUB, visited = new Set([HUB]);
+  // caminho auxiliar (invisível) para medir a rota de cada viagem
+  const probe = document.createElementNS('http://www.w3.org/2000/svg','path');
+  probe.setAttribute('fill','none');
+  probe.setAttribute('stroke','none');
+  svg.appendChild(probe);
+
+  let cur = 5, visited = new Set([cur]);
   let move = null, trailPts = [], arrivedAt = 0, angle = -45;
   let nextAt = performance.now() + 1500;
 
-  const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2;
+  const ease = t => -(Math.cos(Math.PI * t) - 1) / 2;
 
   function setRocket(x, y){
     rocket.setAttribute('transform', `translate(${x} ${y}) rotate(${angle})`);
   }
-  setRocket(hubPt.x, hubPt.y);
+  setRocket(CENTER.x, CENTER.y);
 
+  // rota direta de um ponto ao outro, curvando para longe do centro
   function buildRoute(from, to){
-    const parts = [];
-    if (from !== HUB) parts.push({el: spokes[from], rev: false});
-    if (to !== HUB)   parts.push({el: spokes[to],   rev: true});
-    let total = 0;
-    parts.forEach(p => { p.len = p.el.getTotalLength(); total += p.len; });
-    return {parts, total};
-  }
-  function pointAt(r, l){
-    l = Math.max(0, Math.min(r.total, l));
-    let acc = 0;
-    for (let i = 0; i < r.parts.length; i++){
-      const p = r.parts[i];
-      if (l <= acc + p.len || i === r.parts.length - 1){
-        const s = Math.min(p.len, l - acc);
-        return p.el.getPointAtLength(p.rev ? p.len - s : s);
-      }
-      acc += p.len;
-    }
+    const a = PTS[from], b = PTS[to];
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    let nx = -dy / len, ny = dx / len;
+    if ((mx - CENTER.x) * nx + (my - CENTER.y) * ny < 0){ nx = -nx; ny = -ny; }
+    const bow = len * 0.3;
+    probe.setAttribute('d', `M${a.x} ${a.y} Q${mx + nx * bow} ${my + ny * bow} ${b.x} ${b.y}`);
+    return {total: probe.getTotalLength()};
   }
   function pickTarget(){
-    let free = [0,1,2,3,4,5].filter(i => !visited.has(i));
+    let free = PTS.map((_, i) => i).filter(i => !visited.has(i));
     if (!free.length){            // todos visitados: recomeça o ciclo
       visited = new Set([cur]);
       nodes.forEach(n => n.classList.remove('seen'));
-      free = [0,1,2,3,4,5].filter(i => i !== cur);
+      free = PTS.map((_, i) => i).filter(i => i !== cur);
     }
     return free[Math.floor(Math.random() * free.length)];
   }
@@ -421,12 +420,13 @@
       nextAt = now + INTERVAL_MS;
     }
     if (move){
+      const total = move.route.total;
       const t = Math.min(1, (now - move.start) / TRAVEL_MS);
-      const l = ease(t) * move.route.total;
-      const p = pointAt(move.route, l);
-      const a = l + 2 <= move.route.total ? pointAt(move.route, l + 2) : null;
-      const b = a || pointAt(move.route, l - 2);
-      const target = Math.atan2(a ? a.y - p.y : p.y - b.y, a ? a.x - p.x : p.x - b.x) * 180 / Math.PI;
+      const l = ease(t) * total;
+      const p = probe.getPointAtLength(l);
+      const q = l + 2 <= total ? probe.getPointAtLength(l + 2) : null;
+      const r = q || probe.getPointAtLength(Math.max(0, l - 2));
+      const target = Math.atan2(q ? q.y - p.y : p.y - r.y, q ? q.x - p.x : p.x - r.x) * 180 / Math.PI;
       angle += (((target - angle + 540) % 360) - 180) * 0.15;
       setRocket(p.x, p.y);
       trailPts.push(p.x.toFixed(1) + ' ' + p.y.toFixed(1));
